@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Network Diagnostics & Speed Checker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#1e40af',
+                        secondary: '#374151'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <div class="bg-primary text-white py-12 text-center">
+        <h1 class="text-4xl font-bold mb-2 flex items-center justify-center gap-3">
+            <i data-lucide="network" class="w-8 h-8"></i>
+            Network Diagnostics & Speed Checker
+        </h1>
+        <p class="text-xl opacity-90">Comprehensive mobile network analysis and speed testing tool</p>
+    </div>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div class="bg-white p-6 rounded-lg border-2 border-primary text-center shadow-sm">
+                <h3 class="text-3xl font-bold text-primary mb-2" id="connection-status">--</h3>
+                <p class="text-secondary font-medium">Connection Status</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg border-2 border-primary text-center shadow-sm">
+                <h3 class="text-3xl font-bold text-primary mb-2" id="current-speed">--</h3>
+                <p class="text-secondary font-medium">Current Speed (Mbps)</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg border-2 border-primary text-center shadow-sm">
+                <h3 class="text-3xl font-bold text-primary mb-2" id="ping-latency">--</h3>
+                <p class="text-secondary font-medium">Ping Latency (ms)</p>
+            </div>
+            <div class="bg-white p-6 rounded-lg border-2 border-primary text-center shadow-sm">
+                <h3 class="text-3xl font-bold text-primary mb-2" id="packet-loss">--</h3>
+                <p class="text-secondary font-medium">Packet Loss (%)</p>
+            </div>
+        </div>
+
+        <!-- Test Sections Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 ">
+            <!-- Speed Test -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 border-b-7">
+                <h3 class="text-xl font-semibold text-secondary mb-4 pb-3 border-b-2 border-primary flex items-center gap-2" align = "center" style = "background-color:lightblue;border-radius:20px 20px 0 0 ;padding:10px;">
+                   <i data-lucide="zap" class="w-5 h-5" ></i>
+                    Speed Test
+                </h3>
+                <div class="grid grid-cols-3 gap-4 mb-4 hidden" id="speed-display">
+                    <div class="text-center p-4 bg-white border-2 border-primary rounded">
+                        <h4 class="text-2xl font-bold text-primary" id="download-speed">--</h4>
+                        <p class="text-sm text-secondary">Download (Mbps)</p>
+                    </div>
+                    <div class="text-center p-4 bg-white border-2 border-primary rounded">
+                        <h4 class="text-2xl font-bold text-primary" id="upload-speed">--</h4>
+                        <p class="text-sm text-secondary">Upload (Mbps)</p>
+                    </div>
+                    <div class="text-center p-4 bg-white border-2 border-primary rounded">
+                        <h4 class="text-2xl font-bold text-primary" id="speed-ping">--</h4>
+                        <p class="text-sm text-secondary">Ping (ms)</p>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    <button class="w-full bg-primary hover:bg-blue-800 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runSpeedTest()">
+                        <i data-lucide="rocket" class="w-4 h-4"></i>
+                        Run Speed Test
+                    </button>
+                    <button class="w-full bg-secondary hover:bg-gray-600 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runBandwidthMonitor()">
+                        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                        Monitor Bandwidth
+                    </button>
+                </div>
+                <div id="speedtest-result" class="hidden mt-4 p-4 bg-gray-50 rounded border border-gray-200 max-h-96 overflow-y-auto font-mono text-sm"></div>
+            </div>
+            <!-- Ping Test -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4 pb-3 border-b-2 border-primary flex items-center gap-2" style = "background-color:lightblue;border-radius:20px 20px 0 0 ;padding:10px;">
+                    <i data-lucide="radio" class="w-5 h-5"></i>
+                    Ping Test
+                </h3>
+                <div class="flex flex-wrap gap-2 mb-4" id="ping-display"></div>
+                <div class="space-y-3">
+                    <button class="w-full bg-primary hover:bg-blue-800 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runPingTest('8.8.8.8')">
+                        <i data-lucide="satellite" class="w-4 h-4"></i>
+                        Ping Google DNS
+                    </button>
+                    <button class="w-full bg-primary hover:bg-blue-800 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runPingTest('1.1.1.1')">
+                        <i data-lucide="cloud" class="w-4 h-4"></i>
+                        Ping Cloudflare
+                    </button>
+                    <button class="w-full bg-secondary hover:bg-gray-600 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runPingTest('208.67.222.222')">
+                        <i data-lucide="shield" class="w-4 h-4"></i>
+                        Ping OpenDNS
+                    </button>
+                </div>
+                <div id="ping-result" class="hidden mt-4 p-4 bg-gray-50 rounded border border-gray-200 max-h-96 overflow-y-auto font-mono text-sm"></div>
+            </div>
+
+            <!-- Network Interfaces -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4 pb-3 border-b-2 border-primary flex items-center gap-2" style = "background-color:lightblue;border-radius:20px 20px 0 0 ;padding:10px;">
+                    <i data-lucide="wifi" class="w-5 h-5"></i>
+                    Network Interfaces
+                </h3>
+                <div class="space-y-3">
+                    <button class="w-full bg-primary hover:bg-blue-800 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="getInterfaces()">
+                        <i data-lucide="network" class="w-4 h-4"></i>
+                        Check Interfaces
+                    </button>
+                    <button class="w-full bg-secondary hover:bg-gray-600 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="getNetworkStats()">
+                        <i data-lucide="trending-up" class="w-4 h-4"></i>
+                        Network Stats
+                    </button>
+                </div>
+                <div id="interfaces-result" class="hidden mt-4 p-4 bg-gray-50 rounded border border-gray-200 max-h-96 overflow-y-auto font-mono text-sm"></div>
+            </div>
+
+            <!-- Connectivity Test -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4 pb-3 border-b-2 border-primary flex items-center gap-2" style = "background-color:lightblue;border-radius:20px 20px 0 0 ;padding:10px;">
+                    <i data-lucide="link" class="w-5 h-5"></i>
+                    Connectivity Test
+                </h3>
+                <div class="space-y-3">
+                    <button class="w-full bg-primary hover:bg-blue-800 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="checkConnectivity()">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        Test Connectivity
+                    </button>
+                    <button class="w-full bg-secondary hover:bg-gray-600 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runTraceroute('8.8.8.8')">
+                        <i data-lucide="map" class="w-4 h-4"></i>
+                        Traceroute
+                    </button>
+                </div>
+                <div id="connectivity-result" class="hidden mt-4 p-4 bg-gray-50 rounded border border-gray-200 max-h-96 overflow-y-auto font-mono text-sm"></div>
+            </div>
+
+            <!-- DNS Lookup -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4 pb-3 border-b-2 border-primary flex items-center gap-2" style = "background-color:lightblue;border-radius:20px 20px 0 0 ;padding:10px;">
+                    <i data-lucide="tag" class="w-5 h-5"></i>
+                    DNS Lookup
+                </h3>
+                <div class="space-y-3">
+                    <button class="w-full bg-primary hover:bg-blue-800 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runDNSTest('google.com')">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                        DNS Lookup (Google)
+                    </button>
+                    <button class="w-full bg-secondary hover:bg-gray-600 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runDNSTest('facebook.com')">
+                        <i data-lucide="globe" class="w-4 h-4"></i>
+                        DNS Lookup (Facebook)
+                    </button>
+                    <button class="w-full bg-primary hover:bg-blue-800 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runDNSTest('youtube.com')">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        DNS Lookup (YouTube)
+                    </button>
+                </div>
+                <div id="dns-result" class="hidden mt-4 p-4 bg-gray-50 rounded border border-gray-200 max-h-96 overflow-y-auto font-mono text-sm"></div>
+            </div>
+
+            <!-- Complete Diagnosis -->
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                <h3 class="text-xl font-semibold text-secondary mb-4 pb-3 border-b-2 border-primary flex items-center gap-2" style = "background-color:lightblue;border-radius:20px 20px 0 0 ;padding:10px;">
+                    <i data-lucide="activity" class="w-5 h-5"></i>
+                    Complete Diagnosis
+                </h3>
+                <div class="space-y-3">
+                    <button class="w-full bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="runFullDiagnosis()">
+                        <i data-lucide="stethoscope" class="w-4 h-4"></i>
+                        Full Network Analysis
+                    </button>
+                    <button class="w-full bg-secondary hover:bg-gray-600 text-white py-3 px-4 rounded font-semibold flex items-center justify-center gap-2 transition-colors" onclick="exportResults()">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Export Results
+                    </button>
+                </div>
+                <div class="hidden w-full bg-gray-200 rounded-full h-2 mt-4" id="diagnosis-progress">
+                    <div class="bg-primary h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <div id="full-diagnosis-result" class="hidden mt-4 p-4 bg-gray-50 rounded border border-gray-200 max-h-96 overflow-y-auto font-mono text-sm"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-secondary text-white text-center py-6 mt-8">
+        <p>&copy; 2025 Network Diagnostics Tool | Built with Flask & HTML5 | <a href = "https://phanikumar-kodukulla.vercel.app/"> BY K.Phani Kumar</a></p>
+        <p class="mt-1">Last updated: <span id="last-updated">--</span></p>
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Global variables for storing test results
+        let testResults = {};
+        let isTestRunning = false;
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            updateLastUpdated();
+            checkInitialConnectivity();
+        });
+
+        function updateLastUpdated() {
+            document.getElementById('last-updated').textContent = new Date().toLocaleString();
+        }
+
+        function showLoading(elementId) {
+            const element = document.getElementById(elementId);
+            element.classList.remove('hidden');
+            element.innerHTML = '<div class="flex items-center gap-2 text-gray-600 italic p-4 bg-blue-50 rounded border-l-4 border-primary"><div class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>Running test, please wait...</div>';
+        }
+
+        function showResult(elementId, data, formatted = false) {
+            const element = document.getElementById(elementId);
+            element.classList.remove('hidden');
+            
+            if (formatted) {
+                element.innerHTML = data;
+            } else {
+                element.innerHTML = `<pre class="whitespace-pre-wrap break-words">${JSON.stringify(data, null, 2)}</pre>`;
+            }
+        }
+
+        function showError(elementId, error) {
+            const element = document.getElementById(elementId);
+            element.classList.remove('hidden');
+            element.innerHTML = `<div class="text-red-600 font-semibold flex items-center gap-2"><i data-lucide="x-circle" class="w-4 h-4"></i>Error: ${error}</div>`;
+            lucide.createIcons();
+        }
+
+        async function runSpeedTest() {
+            if (isTestRunning) return;
+            
+            isTestRunning = true;
+            showLoading('speedtest-result');
+            document.getElementById('speed-display').classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/speedtest');
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError('speedtest-result', data.error);
+                } else {
+                    document.getElementById('download-speed').textContent = data.download_speed;
+                    document.getElementById('upload-speed').textContent = data.upload_speed;
+                    document.getElementById('speed-ping').textContent = data.ping;
+                    document.getElementById('speed-display').classList.remove('hidden');
+                    
+                    document.getElementById('current-speed').textContent = data.download_speed;
+                    document.getElementById('ping-latency').textContent = data.ping;
+                    
+                    showResult('speedtest-result', data);
+                    testResults.speedTest = data;
+                }
+            } catch (error) {
+                showError('speedtest-result', error.message);
+            } finally {
+                isTestRunning = false;
+            }
+        }
+
+        async function runPingTest(host = '8.8.8.8') {
+            showLoading('ping-result');
+            
+            try {
+                const response = await fetch(`/api/ping/${host}?count=4`);
+                const data = await response.json();
+                
+                const pingDisplay = document.getElementById('ping-display');
+                pingDisplay.innerHTML = '';
+                
+                data.results.forEach(result => {
+                    const pingItem = document.createElement('div');
+                    pingItem.className = `px-3 py-1 rounded text-xs font-semibold border ${
+                        result.status === 'success' 
+                            ? 'bg-green-100 text-green-800 border-green-300' 
+                            : 'bg-red-100 text-red-800 border-red-300'
+                    }`;
+                    pingItem.textContent = result.status === 'success' 
+                        ? `${result.sequence}: ${result.time}ms` 
+                        : `${result.sequence}: ${result.status}`;
+                    pingDisplay.appendChild(pingItem);
+                });
+                
+                if (data.packet_loss !== undefined) {
+                    document.getElementById('packet-loss').textContent = data.packet_loss;
+                }
+                if (data.average_time) {
+                    document.getElementById('ping-latency').textContent = data.average_time;
+                }
+                
+                showResult('ping-result', data);
+                testResults.pingTest = data;
+            } catch (error) {
+                showError('ping-result', error.message);
+            }
+        }
+
+        async function getInterfaces() {
+            showLoading('interfaces-result');
+            
+            try {
+                const response = await fetch('/api/interfaces');
+                const data = await response.json();
+                
+                let formattedData = '<h4 class="font-semibold mb-3">Network Interfaces:</h4>';
+                for (const [name, info] of Object.entries(data)) {
+                    const borderColor = info.status === 'up' ? 'border-green-500' : 'border-red-500';
+                    const bgColor = info.status === 'up' ? 'bg-green-50' : 'bg-red-50';
+                    const textColor = info.status === 'up' ? 'text-green-700' : 'text-red-700';
+                    formattedData += `
+                        <div class="mb-3 p-3 ${bgColor} border-l-4 ${borderColor} rounded">
+                            <div class="flex items-center gap-2 mb-1">
+                                <strong>${name}</strong>
+                                <div class="w-2 h-2 rounded-full ${info.status === 'up' ? 'bg-green-500' : 'bg-red-500'}"></div>
+                                <span class="text-xs ${textColor} font-semibold">${info.status.toUpperCase()}</span>
+                            </div>
+                            <div class="text-sm text-gray-600">
+                                ${info.addresses.map(addr => `${addr.type}: ${addr.address}`).join('<br>')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                showResult('interfaces-result', formattedData, true);
+                testResults.interfaces = data;
+            } catch (error) {
+                showError('interfaces-result', error.message);
+            }
+        }
+
+        async function getNetworkStats() {
+            showLoading('interfaces-result');
+            
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                showResult('interfaces-result', data);
+                testResults.networkStats = data;
+            } catch (error) {
+                showError('interfaces-result', error.message);
+            }
+        }
+
+        async function checkConnectivity() {
+            showLoading('connectivity-result');
+            
+            try {
+                const response = await fetch('/api/connectivity');
+                const data = await response.json();
+                
+                let formattedData = '<h4 class="font-semibold mb-3">Connectivity Test Results:</h4>';
+                data.forEach(test => {
+                    const isConnected = test.status === 'Connected';
+                    const bgColor = isConnected ? 'bg-green-50' : 'bg-red-50';
+                    const textColor = isConnected ? 'text-green-700' : 'text-red-700';
+                    formattedData += `
+                        <div class="mb-2 p-2 ${bgColor} rounded flex items-center gap-2">
+                            <div class="w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}"></div>
+                            <strong>${test.name}</strong> (${test.host}:${test.port}) - 
+                            <span class="${textColor} font-semibold">${test.status}</span>
+                            ${test.response_time ? ` - ${test.response_time}ms` : ''}
+                        </div>
+                    `;
+                });
+                
+                showResult('connectivity-result', formattedData, true);
+                testResults.connectivity = data;
+                
+                const connectedCount = data.filter(test => test.status === 'Connected').length;
+                const statusText = connectedCount > data.length / 2 ? '🟢 Good' : '🟡 Poor';
+                document.getElementById('connection-status').innerHTML = statusText;
+                
+            } catch (error) {
+                showError('connectivity-result', error.message);
+            }
+        }
+
+        async function runTraceroute(host = '8.8.8.8') {
+            showLoading('connectivity-result');
+            
+            try {
+                const response = await fetch(`/api/traceroute/${host}`);
+                const data = await response.json();
+                showResult('connectivity-result', data);
+                testResults.traceroute = data;
+            } catch (error) {
+                showError('connectivity-result', error.message);
+            }
+        }
+
+        async function runDNSTest(domain = 'google.com') {
+            showLoading('dns-result');
+            
+            try {
+                const response = await fetch(`/api/dns/${domain}`);
+                const data = await response.json();
+                
+                let formattedData = `<h4 class="font-semibold mb-3">DNS Lookup Results for ${domain}:</h4>`;
+                for (const [recordType, records] of Object.entries(data.records)) {
+                    formattedData += `
+                        <div class="mb-3 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+                            <strong class="text-blue-700">${recordType} Records:</strong><br>
+                            <div class="text-sm text-gray-600 mt-1">
+                                ${Array.isArray(records) ? records.join('<br>') : records}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                showResult('dns-result', formattedData, true);
+                testResults.dnsTest = data;
+            } catch (error) {
+                showError('dns-result', error.message);
+            }
+        }
+
+        async function runBandwidthMonitor() {
+            showLoading('speedtest-result');
+            
+            try {
+                const response = await fetch('/api/bandwidth-monitor?duration=10&interval=1');
+                const data = await response.json();
+                showResult('speedtest-result', data);
+                testResults.bandwidthMonitor = data;
+            } catch (error) {
+                showError('speedtest-result', error.message);
+            }
+        }
+
+        async function runFullDiagnosis() {
+            if (isTestRunning) return;
+            
+            isTestRunning = true;
+            document.getElementById('diagnosis-progress').classList.remove('hidden');
+            showLoading('full-diagnosis-result');
+            
+            try {
+                const response = await fetch('/api/full-diagnosis');
+                const data = await response.json();
+                
+                if (data.speed_test && !data.speed_test.error) {
+                    document.getElementById('current-speed').textContent = data.speed_test.download_speed;
+                    document.getElementById('ping-latency').textContent = data.speed_test.ping;
+                }
+                
+                if (data.ping_google) {
+                    document.getElementById('packet-loss').textContent = data.ping_google.packet_loss;
+                }
+                
+                if (data.connectivity) {
+                    const connectedCount = data.connectivity.filter(test => test.status === 'Connected').length;
+                    const statusText = connectedCount > data.connectivity.length / 2 ? '🟢 Good' : '🟡 Poor';
+                    document.getElementById('connection-status').innerHTML = statusText;
+                }
+                
+                showResult('full-diagnosis-result', data);
+                testResults.fullDiagnosis = data;
+                updateLastUpdated();
+                
+            } catch (error) {
+                showError('full-diagnosis-result', error.message);
+            } finally {
+                isTestRunning = false;
+                setTimeout(() => {
+                    document.getElementById('diagnosis-progress').classList.add('hidden');
+                }, 1000);
+            }
+        }
+
+        async function checkInitialConnectivity() {
+            try {
+                const response = await fetch('/api/connectivity');
+                const data = await response.json();
+                const connectedCount = data.filter(test => test.status === 'Connected').length;
+                const statusText = connectedCount > data.length / 2 ? '🟢 Online' : '🔴 Issues';
+                document.getElementById('connection-status').innerHTML = statusText;
+            } catch (error) {
+                document.getElementById('connection-status').innerHTML = '🔴 Offline';
+            }
+        }
+
+        function exportResults() {
+            const dataStr = JSON.stringify(testResults, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `network_diagnosis_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            URL.revokeObjectURL(url);
+        }
+
+        // Auto-refresh connection status every 30 seconds
+        setInterval(checkInitialConnectivity, 30000);
+    </script>
+</body>
+</html>
